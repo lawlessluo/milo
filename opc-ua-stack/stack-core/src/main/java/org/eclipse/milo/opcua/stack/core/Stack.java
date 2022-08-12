@@ -68,9 +68,6 @@ public final class Stack {
 
                 @Override
                 public Thread newThread(@NotNull Runnable r) {
-                    if (threadNumber.get() > Runtime.getRuntime().availableProcessors()) {
-                        threadNumber.set(0);
-                    }
                     Thread thread = new Thread(r, "milo-netty-event-loop-" +  threadNumber.getAndIncrement());
                     thread.setDaemon(true);
                     return thread;
