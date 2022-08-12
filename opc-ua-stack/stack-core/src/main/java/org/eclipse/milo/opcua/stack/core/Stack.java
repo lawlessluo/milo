@@ -10,13 +10,7 @@
 
 package org.eclipse.milo.opcua.stack.core;
 
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.SynchronousQueue;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicLong;
 
 import io.netty.channel.nio.NioEventLoopGroup;
@@ -58,7 +52,9 @@ public final class Stack {
     public static final int DEFAULT_HTTPS_PORT = 8443;
 
     private static NioEventLoopGroup EVENT_LOOP;
-    private static ExecutorService EXECUTOR_SERVICE;
+
+    private static ThreadPoolExecutor EXECUTOR_SERVICE;
+
     private static ScheduledExecutorService SCHEDULED_EXECUTOR_SERVICE;
     private static HashedWheelTimer WHEEL_TIMER;
 
@@ -72,13 +68,16 @@ public final class Stack {
 
                 @Override
                 public Thread newThread(@NotNull Runnable r) {
-                    Thread thread = new Thread(r, "milo-netty-event-loop-" + threadNumber.getAndIncrement());
+                    if (threadNumber.get() > Runtime.getRuntime().availableProcessors()) {
+                        threadNumber.set(0);
+                    }
+                    Thread thread = new Thread(r, "milo-netty-event-loop-" +  threadNumber.getAndIncrement());
                     thread.setDaemon(true);
                     return thread;
                 }
             };
 
-            EVENT_LOOP = new NioEventLoopGroup(0, threadFactory);
+            EVENT_LOOP = new NioEventLoopGroup(4, threadFactory);
         }
 
         return EVENT_LOOP;
@@ -94,6 +93,9 @@ public final class Stack {
 
                 @Override
                 public Thread newThread(@NotNull Runnable r) {
+                    if(threadNumber.get() > Runtime.getRuntime().availableProcessors() * 8L){
+                        threadNumber.set(0);
+                    }
                     Thread thread = new Thread(r, "milo-shared-thread-pool-" + threadNumber.getAndIncrement());
                     thread.setDaemon(true);
                     thread.setUncaughtExceptionHandler(
@@ -106,9 +108,9 @@ public final class Stack {
             };
 
             EXECUTOR_SERVICE = new ThreadPoolExecutor(
-                0, Integer.MAX_VALUE,
+                1, Runtime.getRuntime().availableProcessors(),
                 60L, TimeUnit.SECONDS,
-                new SynchronousQueue<>(),
+                new LinkedBlockingQueue<>(100),
                 threadFactory
             ) {
 
@@ -137,6 +139,9 @@ public final class Stack {
 
                 @Override
                 public Thread newThread(@NotNull Runnable r) {
+                    if(threadNumber.get() > Runtime.getRuntime().availableProcessors() * 8L){
+                        threadNumber.set(0);
+                    }
                     Thread thread = new Thread(r, "milo-shared-scheduled-executor-" + threadNumber.getAndIncrement());
                     thread.setDaemon(true);
                     thread.setUncaughtExceptionHandler(
@@ -165,7 +170,8 @@ public final class Stack {
             };
 
             executor.setExecuteExistingDelayedTasksAfterShutdownPolicy(false);
-
+            executor.setKeepAliveTime(1L,TimeUnit.MILLISECONDS);
+            executor.allowCoreThreadTimeOut(true);
             SCHEDULED_EXECUTOR_SERVICE = executor;
         }
 

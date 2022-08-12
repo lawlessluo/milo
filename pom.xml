@@ -179,7 +179,7 @@
 
     <build>
         <plugins>
-            <plugin>
+            <!--<plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-checkstyle-plugin</artifactId>
                 <version>3.0.0</version>
@@ -271,7 +271,7 @@
                         </goals>
                     </execution>
                 </executions>
-            </plugin>
+            </plugin>-->
 
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -401,7 +401,7 @@
 
     <reporting>
         <plugins>
-            <plugin>
+            <!--<plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-checkstyle-plugin</artifactId>
                 <version>3.0.0</version>
@@ -425,7 +425,7 @@
                         **/org/eclipse/milo/opcua/stack/core/StatusCodes.java
                     </excludes>
                 </configuration>
-            </plugin>
+            </plugin>-->
         </plugins>
     </reporting>
 
